@@ -1,0 +1,14 @@
+definindo a FLASK_APPvariável de ambiente:
+
+(venv) $ export FLASK_APP=microblog.py
+
+(venv) $ flask run
+
+variáveis ​​de ambiente não são lembradas nas sessões de terminal, você pode achar tedioso sempre definir a FLASK_APPvariável de ambiente ao abrir uma nova janela de terminal. A partir da versão 1.0, o Flask permite registrar variáveis ​​de ambiente que você deseja importar automaticamente ao executar o flaskcomando. Para usar esta opção você precisa instalar o pacote python-dotenv :
+
+(venv) $ pip install python-dotenv
+Em seguida, você pode apenas gravar o nome e o valor da variável de ambiente em um arquivo .flaskenv no diretório de nível superior do projeto:
+
+.flaskenv : Variáveis ​​de ambiente para o comando flask
+
+FLASK_APP=microblog.py
