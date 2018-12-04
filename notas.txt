@@ -1,14 +1,45 @@
-definindo a FLASK_APPvariável de ambiente:
+>>> from app.models import User
+>>> u = User(username='susan', email='susan@example.com')
+>>> u
+<User susan>
 
-(venv) $ export FLASK_APP=microblog.py
+Criando repositorio de migração 
 
-(venv) $ flask run
+(venv) $ flask db init
+  Creating directory /home/miguel/microblog/migrations ... done
+  Creating directory /home/miguel/microblog/migrations/versions ... done
+  Generating /home/miguel/microblog/migrations/alembic.ini ... done
+  Generating /home/miguel/microblog/migrations/env.py ... done
+  Generating /home/miguel/microblog/migrations/README ... done
+  Generating /home/miguel/microblog/migrations/script.py.mako ... done
+  Please edit configuration/connection/logging settings in
+  '/home/miguel/microblog/migrations/alembic.ini' before proceeding.
 
-variáveis ​​de ambiente não são lembradas nas sessões de terminal, você pode achar tedioso sempre definir a FLASK_APPvariável de ambiente ao abrir uma nova janela de terminal. A partir da versão 1.0, o Flask permite registrar variáveis ​​de ambiente que você deseja importar automaticamente ao executar o flaskcomando. Para usar esta opção você precisa instalar o pacote python-dotenv :
+Primeira migração de banco de dados
 
-(venv) $ pip install python-dotenv
-Em seguida, você pode apenas gravar o nome e o valor da variável de ambiente em um arquivo .flaskenv no diretório de nível superior do projeto:
+(venv) $ flask db migrate -m "users table"
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added table 'user'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_email' on '['email']'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_username' on '['username']'
+  Generating /home/miguel/microblog/migrations/versions/e517276bb1c2_users_table.py ... done
 
-.flaskenv : Variáveis ​​de ambiente para o comando flask
+O flask db migratecomando não faz alterações no banco de dados, apenas gera o script de migração. Para aplicar as alterações ao banco de dados, o flask db upgradecomando deve ser usado.
 
-FLASK_APP=microblog.py
+(venv) $ flask db upgrade
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> e517276bb1c2, users table
+
+Uma vez no prompt do Python, vamos importar a instância do banco de dados e os modelos:
+
+>>> from app import db
+>>> from app.models import User, Post
+Comece criando um novo usuário:
+
+>>> u = User(username='john', email='john@example.com')
+>>> db.session.add(u)
+>>> db.session.commit()
+
+Mudanças em um banco de dados são feitas no contexto de uma sessão, que pode ser acessada como db.session. Múltiplas alterações podem ser acumuladas em uma sessão e, uma vez registradas todas as alterações, você pode emitir um único db.session.commit(), que grava todas as alterações atomicamente. Se a qualquer momento durante o trabalho em uma sessão houver um erro, uma chamada para db.session.rollback()abortar a sessão e remover quaisquer alterações armazenadas nela. O importante é lembrar que as alterações são gravadas apenas no banco de dados quando db.session.commit()são chamadas. As sessões garantem que o banco de dados nunca será deixado em um estado inconsistente.
