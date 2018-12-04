@@ -1,45 +1,22 @@
->>> from app.models import User
->>> u = User(username='susan', email='susan@example.com')
->>> u
-<User susan>
+A extensão Flask-Login funciona com o modelo de usuário do aplicativo e espera que certas propriedades e métodos sejam implementados nele. Essa abordagem é interessante, porque, desde que esses itens necessários sejam incluídos no modelo, o Flask-Login não possui nenhum outro requisito, portanto, por exemplo, ele pode trabalhar com modelos de usuário baseados em qualquer sistema de banco de dados.
 
-Criando repositorio de migração 
+Os quatro itens necessários estão listados abaixo:
 
-(venv) $ flask db init
-  Creating directory /home/miguel/microblog/migrations ... done
-  Creating directory /home/miguel/microblog/migrations/versions ... done
-  Generating /home/miguel/microblog/migrations/alembic.ini ... done
-  Generating /home/miguel/microblog/migrations/env.py ... done
-  Generating /home/miguel/microblog/migrations/README ... done
-  Generating /home/miguel/microblog/migrations/script.py.mako ... done
-  Please edit configuration/connection/logging settings in
-  '/home/miguel/microblog/migrations/alembic.ini' before proceeding.
+is_authenticated: uma propriedade que é Truese o usuário tiver credenciais válidas ou Falsenão.
+is_active: uma propriedade que é Truese a conta do usuário está ativa ou Falsenão.
+is_anonymous: uma propriedade que é Falsepara usuários regulares e Truepara um usuário anônimo especial.
+get_id(): um método que retorna um identificador exclusivo para o usuário como uma string (unicode, se estiver usando o Python 2).
 
-Primeira migração de banco de dados
+Função de Carregador de Usuários
+O Flask-Login acompanha o usuário conectado armazenando seu identificador exclusivo na sessão de usuário do Flask , um espaço de armazenamento atribuído a cada usuário que se conecta ao aplicativo. Cada vez que o usuário conectado navega para uma nova página, o Flask-Login recupera a ID do usuário da sessão e, em seguida, carrega esse usuário na memória.
 
-(venv) $ flask db migrate -m "users table"
-INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
-INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
-INFO  [alembic.autogenerate.compare] Detected added table 'user'
-INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_email' on '['email']'
-INFO  [alembic.autogenerate.compare] Detected added index 'ix_user_username' on '['username']'
-  Generating /home/miguel/microblog/migrations/versions/e517276bb1c2_users_table.py ... done
+Como o Flask-Login não sabe nada sobre bancos de dados, ele precisa da ajuda do aplicativo para carregar um usuário. Por esse motivo, a extensão espera que o aplicativo configure uma função de carregador de usuário, que pode ser chamada para carregar um usuário com o ID. Esta função pode ser adicionada no módulo app / models.py :
 
-O flask db migratecomando não faz alterações no banco de dados, apenas gera o script de migração. Para aplicar as alterações ao banco de dados, o flask db upgradecomando deve ser usado.
+app / models.py : Função do carregador de usuário Flask-Login
 
-(venv) $ flask db upgrade
-INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
-INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
-INFO  [alembic.runtime.migration] Running upgrade  -> e517276bb1c2, users table
+from app import login
+# ...
 
-Uma vez no prompt do Python, vamos importar a instância do banco de dados e os modelos:
-
->>> from app import db
->>> from app.models import User, Post
-Comece criando um novo usuário:
-
->>> u = User(username='john', email='john@example.com')
->>> db.session.add(u)
->>> db.session.commit()
-
-Mudanças em um banco de dados são feitas no contexto de uma sessão, que pode ser acessada como db.session. Múltiplas alterações podem ser acumuladas em uma sessão e, uma vez registradas todas as alterações, você pode emitir um único db.session.commit(), que grava todas as alterações atomicamente. Se a qualquer momento durante o trabalho em uma sessão houver um erro, uma chamada para db.session.rollback()abortar a sessão e remover quaisquer alterações armazenadas nela. O importante é lembrar que as alterações são gravadas apenas no banco de dados quando db.session.commit()são chamadas. As sessões garantem que o banco de dados nunca será deixado em um estado inconsistente.
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))
